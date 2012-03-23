@@ -86,7 +86,7 @@
 /* Note: changing the following defines breaks the Lua 5.1 ABI. */
 #define LUA_INTEGER	ptrdiff_t
 #define LUA_IDSIZE	60	/* Size of lua_Debug.short_src. */
-#define LUAL_BUFFERSIZE	BUFSIZ	/* Size of lauxlib and io.* buffers. */
+#define LUAL_BUFFERSIZE	32768 /* Size of lauxlib and io.* buffers. */
 
 /* The following defines are here only for compatibility with luaconf.h
 ** from the standard Lua distribution. They must not be changed for LuaJIT.

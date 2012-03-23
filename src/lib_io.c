@@ -182,12 +182,19 @@ static int io_file_readline(lua_State *L, FILE *fp, size_t chop)
   }
 }
 
-static int io_file_readchars(lua_State *L, FILE *fp, size_t n)
+#include "inflate.c"
+
+static int io_file_readchars(lua_State *L, FILE *fp, size_t n, int z)
 {
   size_t rlen;  /* how much to read */
   size_t nr;  /* number of chars actually read */
   luaL_Buffer b;
   luaL_buffinit(L, &b);
+  if (z) {
+    inflate(L, fp, &b);
+    luaL_pushresult(&b);
+    return strV(L->top-1)->len > 0;
+  }
   rlen = LUAL_BUFFERSIZE;  /* try to read that much each time */
   do {
     char *p = luaL_prepbuffer(&b);
@@ -200,7 +207,7 @@ static int io_file_readchars(lua_State *L, FILE *fp, size_t n)
   return (n == 0 || strV(L->top-1)->len > 0);
 }
 
-static int io_file_read(lua_State *L, FILE *fp, int start)
+static int io_file_read(lua_State *L, FILE *fp, int start, int z)
 {
   int ok, n, nargs = (int)(L->top - L->base) - start;
   clearerr(fp);
@@ -221,12 +228,12 @@ static int io_file_read(lua_State *L, FILE *fp, int start)
 	else if ((p[1] & ~0x20) == 'L')
 	  ok = io_file_readline(L, fp, (p[1] == 'l'));
 	else if (p[1] == 'a')
-	  io_file_readchars(L, fp, ~((size_t)0));
+	  io_file_readchars(L, fp, ~((size_t)0), z);
 	else
 	  lj_err_arg(L, n+1, LJ_ERR_INVFMT);
       } else if (tvisnumber(L->base+n)) {
 	size_t len = (size_t)lj_lib_checkint(L, n+1);
-	ok = len ? io_file_readchars(L, fp, len) : io_file_testeof(L, fp);
+	ok = len ? io_file_readchars(L, fp, len, z) : io_file_testeof(L, fp);
       } else {
 	lj_err_arg(L, n+1, LJ_ERR_INVOPT);
       }
@@ -274,7 +281,12 @@ LJLIB_CF(io_method_close)
 
 LJLIB_CF(io_method_read)
 {
-  return io_file_read(L, io_tofile(L)->fp, 1);
+  return io_file_read(L, io_tofile(L)->fp, 1, 0);
+}
+
+LJLIB_CF(io_method_zread)
+{
+  return io_file_read(L, io_tofile(L)->fp, 1, 1);
 }
 
 LJLIB_CF(io_method_write)		LJLIB_REC(io_write 0)
@@ -423,7 +435,7 @@ LJLIB_CF(io_close)
 
 LJLIB_CF(io_read)
 {
-  return io_file_read(L, io_stdfile(L, GCROOT_IO_INPUT), 0);
+  return io_file_read(L, io_stdfile(L, GCROOT_IO_INPUT), 0, 0);
 }
 
 LJLIB_CF(io_write)		LJLIB_REC(io_write GCROOT_IO_OUTPUT)
