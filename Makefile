@@ -129,12 +129,15 @@ amalg:
 	$(MAKE) -C src amalg
 
 clean:
+	rm -f `find lib -name *.l[ab][rc]`
 	$(MAKE) -C src clean
 
 cleaner:
+	rm -f `find lib -name *.l[ab][rc]`
 	$(MAKE) -C src cleaner
 
 distclean:
+	rm -f `find lib -name *.l[ab][rc]`
 	$(MAKE) -C src distclean
 
 .PHONY: all install amalg clean cleaner distclean

@@ -441,6 +441,7 @@ static int collectargs(char **argv, int *flags)
 static int runargs(lua_State *L, char **argv, int n)
 {
   int i;
+  dolibrary(L, "init");
   for (i = 1; i < n; i++) {
     if (argv[i] == NULL) continue;
     lua_assert(argv[i][0] == '-');
