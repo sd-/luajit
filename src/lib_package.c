@@ -275,10 +275,11 @@ static int readable(lua_State *L, const char *filename)
   int ret;
   lua_getglobal(L, "package");
   lua_getfield(L, -1, "readable");
+  lua_remove(L, -2);
   lua_pushstring(L, filename);
-  lua_call(L, 2, 1);
+  lua_call(L, 1, 1);
   ret=!lua_isnil(L, -1);
-  lua_pop(L, 2);
+  lua_pop(L, 1);
   return ret;
 }
 
@@ -306,6 +307,7 @@ static int lj_cf_package_readable(lua_State *L)
   FILE *f = fopen(filename, "r");  /* try to open file */
   if (f == NULL) return 0;  /* open failed */
   fclose(f);
+  lua_settop(L, 1);
   return 1;
 }
 

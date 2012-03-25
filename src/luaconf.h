@@ -36,9 +36,9 @@
 #define LUA_XCPATH
 #endif
 #define LUA_PATH_DEFAULT \
-  "./?.moon;" LUA_JDIR"?.moon;" LUA_LDIR"?.moon;" LUA_LDIR"?/init.moon;" \
-  "./?.lua;" LUA_JDIR"?.lua;" LUA_LDIR"?.lua;" LUA_LDIR"?/init.lua;" \
-  "./?.lba;" LUA_JDIR"?.lbc;" LUA_LDIR"?.lbc;" LUA_LDIR"?/init.lbc" LUA_XPATH
+  "./?.moon;./?/init.moon;" LUA_JDIR"?.moon;" LUA_LDIR"?.moon;" LUA_LDIR"?/init.moon;" \
+  "./?.lua;./?/init.lua;" LUA_JDIR"?.lua;" LUA_LDIR"?.lua;" LUA_LDIR"?/init.lua;" \
+  "./?.lbc;./?/init.lbc;" LUA_JDIR"?.lbc;" LUA_LDIR"?.lbc;" LUA_LDIR"?/init.lbc" LUA_XPATH
 #define LUA_CPATH_DEFAULT \
   "./?.so;" LUA_CDIR"?.so;" LUA_XCPATH LUA_CDIR"loadall.so"
 #endif

@@ -253,7 +253,15 @@ LUALIB_API int luaL_loadfile(lua_State *L, const char *filename)
 {
   lua_getglobal(L, "loadfile");
   lua_pushstring(L, filename);
-  return lua_pcall(L, 1, 1, 0);
+  int ret=lua_pcall(L, 1, 2, 0);
+  if (ret==0) {
+    if (lua_isnil(L, -2)) {
+      lua_remove(L, -2);
+      return LUA_ERRFILE;
+    }
+  }
+  lua_pop(L, 1);
+  return ret;
 }
 
 

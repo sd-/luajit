@@ -285,12 +285,7 @@ static int handle_script(lua_State *L, char **argv, int n)
   if (strcmp(fname, "-") == 0 && strcmp(argv[n-1], "--") != 0)
     fname = NULL;  /* stdin */
 
-
-  lua_getglobal(L, "loadfile");
-  lua_pushstring(L, fname);
-  status = report(L, docall(L, 1, 1));
-
-//  status = luaL_loadfile(L, fname);
+  status = luaL_loadfile(L, fname);
   lua_insert(L, -(narg+1));
   if (status == 0)
     status = docall(L, narg, 0);
@@ -492,9 +487,9 @@ static int handle_luainit(lua_State *L)
   const char *init = getenv(LUA_INIT);
   if (init == NULL) {
     const char *bcdata = ll_bcsym(NULL, mksymname(L, "init", SYMPREFIX_BC));
-    if (bcdata) {
-      luaL_loadbuffer(L, bcdata, ~(0), "init");
-      docall(L, 0, 1);
+    if (bcdata && bcdata[0]) {
+	  int status = luaL_loadbuffer(L, bcdata, ~0, "@init") || docall(L, 0, 1);
+	  return report(L, status);
     }
     return 0;  /* status OK */
   } else if (init[0] == '@')
@@ -532,6 +527,7 @@ static int pmain(lua_State *L)
   if ((flags & FLAGS_VERSION)) print_version();
   s->status = runargs(L, argv, (script > 0) ? script : s->argc);
   if (s->status != 0) return 0;
+  printf("handling script!\n");
   if (script)
     s->status = handle_script(L, argv, script);
   if (s->status != 0) return 0;
