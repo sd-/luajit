@@ -30,7 +30,6 @@
 
 /* Symbol name prefixes. */
 #define SYMPREFIX_CF		"luaopen_%s"
-#define SYMPREFIX_BC		"luaJIT_BC_%s"
 
 #if LJ_TARGET_DLOPEN
 
@@ -55,7 +54,7 @@ static lua_CFunction ll_sym(lua_State *L, void *lib, const char *sym)
   return f;
 }
 
-static const char *ll_bcsym(void *lib, const char *sym)
+const char *ll_bcsym(void *lib, const char *sym)
 {
 #if defined(RTLD_DEFAULT)
   if (lib == NULL) lib = RTLD_DEFAULT;
@@ -126,7 +125,7 @@ static lua_CFunction ll_sym(lua_State *L, void *lib, const char *sym)
   return f;
 }
 
-static const char *ll_bcsym(void *lib, const char *sym)
+const char *ll_bcsym(void *lib, const char *sym)
 {
   if (lib) {
     return (const char *)GetProcAddress((HINSTANCE)lib, sym);
@@ -166,7 +165,7 @@ static lua_CFunction ll_sym(lua_State *L, void *lib, const char *sym)
   return NULL;
 }
 
-static const char *ll_bcsym(void *lib, const char *sym)
+const char *ll_bcsym(void *lib, const char *sym)
 {
   (void)lib; (void)sym;
   return NULL;
@@ -196,7 +195,7 @@ static void **ll_register(lua_State *L, const char *path)
   return plib;
 }
 
-static const char *mksymname(lua_State *L, const char *modname,
+const char *mksymname(lua_State *L, const char *modname,
 			     const char *prefix)
 {
   const char *funcname;

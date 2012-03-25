@@ -37,7 +37,12 @@ LUALIB_API int luaopen_ffi(lua_State *L);
 LUALIB_API int luaopen_lpeg(lua_State *L);
 
 LUALIB_API void luaL_openlibs(lua_State *L);
+LUALIB_API const char *ll_bcsym(void *lib, const char *sym);
+LUALIB_API const char *mksymname(lua_State *L, const char *modname,
+			     const char *prefix);
 
+
+#define SYMPREFIX_BC		"luaJIT_BC_%s"
 #ifndef lua_assert
 #define lua_assert(x)	((void)0)
 #endif

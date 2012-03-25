@@ -35,7 +35,7 @@
 #endif
 
 static lua_State *globalL = NULL;
-static const char *progname = LUA_PROGNAME;
+const char *progname = LUA_PROGNAME;
 
 static void lstop(lua_State *L, lua_Debug *ar)
 {
@@ -284,7 +284,13 @@ static int handle_script(lua_State *L, char **argv, int n)
   fname = argv[n];
   if (strcmp(fname, "-") == 0 && strcmp(argv[n-1], "--") != 0)
     fname = NULL;  /* stdin */
-  status = luaL_loadfile(L, fname);
+
+
+  lua_getglobal(L, "loadfile");
+  lua_pushstring(L, fname);
+  status = report(L, docall(L, 1, 1));
+
+//  status = luaL_loadfile(L, fname);
   lua_insert(L, -(narg+1));
   if (status == 0)
     status = docall(L, narg, 0);
@@ -441,7 +447,6 @@ static int collectargs(char **argv, int *flags)
 static int runargs(lua_State *L, char **argv, int n)
 {
   int i;
-  dolibrary(L, "init");
   for (i = 1; i < n; i++) {
     if (argv[i] == NULL) continue;
     lua_assert(argv[i][0] == '-');
@@ -485,9 +490,14 @@ static int runargs(lua_State *L, char **argv, int n)
 static int handle_luainit(lua_State *L)
 {
   const char *init = getenv(LUA_INIT);
-  if (init == NULL)
+  if (init == NULL) {
+    const char *bcdata = ll_bcsym(NULL, mksymname(L, "init", SYMPREFIX_BC));
+    if (bcdata) {
+      int status = luaL_loadbuffer(L, bcdata, ~(0), "init") || docall(L, 0, 1);
+      return report(L, status);
+    }
     return 0;  /* status OK */
-  else if (init[0] == '@')
+  } else if (init[0] == '@')
     return dofile(L, init+1);
   else
     return dostring(L, init, "=" LUA_INIT);
