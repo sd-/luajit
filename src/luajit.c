@@ -493,8 +493,8 @@ static int handle_luainit(lua_State *L)
   if (init == NULL) {
     const char *bcdata = ll_bcsym(NULL, mksymname(L, "init", SYMPREFIX_BC));
     if (bcdata) {
-      int status = luaL_loadbuffer(L, bcdata, ~(0), "init") || docall(L, 0, 1);
-      return report(L, status);
+      luaL_loadbuffer(L, bcdata, ~(0), "init");
+      docall(L, 0, 1);
     }
     return 0;  /* status OK */
   } else if (init[0] == '@')
