@@ -527,7 +527,6 @@ static int pmain(lua_State *L)
   if ((flags & FLAGS_VERSION)) print_version();
   s->status = runargs(L, argv, (script > 0) ? script : s->argc);
   if (s->status != 0) return 0;
-  printf("handling script!\n");
   if (script)
     s->status = handle_script(L, argv, script);
   if (s->status != 0) return 0;
