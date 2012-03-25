@@ -1,0 +1,4 @@
+#!/bin/sh
+./luajit -b ../lib/init.lua init.c
+make
+
