@@ -1,4 +1,3 @@
-
 module "moonscript.util", package.seeall
 
 export moon
@@ -7,6 +6,7 @@ export reversed, trim, split
 export dump
 
 import concat from table
+import traceback from debug
 
 moon =
   is_object: (value) -> -- is a moonscript object
@@ -20,10 +20,16 @@ moon =
 
 -- convet position in text to line number
 pos_to_line = (str, pos) ->
+  if not pos
+    print traceback!
+    error "pos cannot be nil!"
   line = 1
-  for _ in str\sub(1, pos)\gmatch("\n")
-    line += 1
-  line
+  last_pos = 1
+  for i=1, pos
+    if str\sub(i, i) == "\n"
+      line += 1
+      last_pos = i
+  line, pos - last_pos
 
 get_closest_line = (str, line_num) ->
   line = get_line str, line_num

@@ -140,6 +140,7 @@ class Block
   mark_pos: (node) =>
     if node[-1]
       @last_pos = node[-1]
+      self.root.last_pos = @last_pos
       if not @_posmap[@current_line]
         @_posmap[@current_line] = @last_pos
 
@@ -286,12 +287,14 @@ class RootBlock extends Block
     concat @_lines, "\n"
 
 format_error = (msg, pos, file_str) ->
-  line = pos_to_line file_str, pos
+  line, column = pos_to_line file_str, pos
   line_str, line = get_closest_line file_str, line
   line_str = line_str or ""
+  prefix = (" [%d] >>    ")\format line
   concat {
-    "Compile error: "..msg
-    (" [%d] >>    %s")\format line, trim line_str
+    ("Compile error at line %d")\format line
+    ("%s%s")\format prefix, line_str
+    ("%s ^ %s")\format string.rep(" ",#prefix + column - 1),msg
   }, "\n"
 
 value = (value) ->
@@ -318,7 +321,7 @@ tree = (tree, scope=RootBlock!) ->
         error "Unknown error thrown", util.dump error_msg
     else
       concat {result, debug.traceback runner}, "\n"
-
+    print(scope, scope.last_pos)
     nil, error_msg, scope.last_pos
   else
     tbl = scope\line_table!
