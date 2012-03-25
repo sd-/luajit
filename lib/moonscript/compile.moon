@@ -321,7 +321,6 @@ tree = (tree, scope=RootBlock!) ->
         error "Unknown error thrown", util.dump error_msg
     else
       concat {result, debug.traceback runner}, "\n"
-    print(scope, scope.last_pos)
     nil, error_msg, scope.last_pos
   else
     tbl = scope\line_table!
