@@ -361,7 +361,7 @@ LJLIB_CF(loadstring)
 LJLIB_CF(loadfile)
 {
   GCstr *fname = lj_lib_optstr(L, 1);
-  return load_aux(L, luaL_loadfile(L, fname ? strdata(fname) : NULL));
+  return load_aux(L, do_luaL_loadfile(L, fname ? strdata(fname) : NULL));
 }
 
 static const char *reader_func(lua_State *L, void *ud, size_t *size)

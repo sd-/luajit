@@ -251,6 +251,14 @@ static const char *reader_file(lua_State *L, void *ud, size_t *size)
 
 LUALIB_API int luaL_loadfile(lua_State *L, const char *filename)
 {
+  lua_getglobal(L, "loadfile");
+  lua_pushstring(L, filename);
+  return lua_pcall(L, 1, 1, 0);
+}
+
+
+LUALIB_API int do_luaL_loadfile(lua_State *L, const char *filename)
+{
   FileReaderCtx ctx;
   int status;
   const char *chunkname;

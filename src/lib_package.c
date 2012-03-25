@@ -258,13 +258,6 @@ static int lj_cf_package_unloadlib(lua_State *L)
 
 /* ------------------------------------------------------------------------ */
 
-static int readable(const char *filename)
-{
-  FILE *f = fopen(filename, "r");  /* try to open file */
-  if (f == NULL) return 0;  /* open failed */
-  fclose(f);
-  return 1;
-}
 
 static const char *pushnexttemplate(lua_State *L, const char *path)
 {
@@ -277,6 +270,18 @@ static const char *pushnexttemplate(lua_State *L, const char *path)
   return l;
 }
 
+static int readable(lua_State *L, const char *filename)
+{
+  int ret;
+  lua_getglobal(L, "package");
+  lua_getfield(L, -1, "readable");
+  lua_pushstring(L, filename);
+  lua_call(L, 2, 1);
+  ret=!lua_isnil(L, -1);
+  lua_pop(L, 2);
+  return ret;
+}
+
 static const char *searchpath (lua_State *L, const char *name,
 			       const char *path)
 {
@@ -286,13 +291,22 @@ static const char *searchpath (lua_State *L, const char *name,
     const char *filename = luaL_gsub(L, lua_tostring(L, -1),
 				     LUA_PATH_MARK, name);
     lua_remove(L, -2);  /* remove path template */
-    if (readable(filename))  /* does file exist and is readable? */
+    if (readable(L, filename))  /* does file exist and is readable? */
       return filename;  /* return that file name */
     lua_pushfstring(L, "\n\tno file " LUA_QS, filename);
     lua_remove(L, -2);  /* remove file name */
     lua_concat(L, 2);  /* add entry to possible error message */
   }
   return NULL;  /* not found */
+}
+
+static int lj_cf_package_readable(lua_State *L)
+{
+  const char *filename = luaL_checkstring(L, 1);
+  FILE *f = fopen(filename, "r");  /* try to open file */
+  if (f == NULL) return 0;  /* open failed */
+  fclose(f);
+  return 1;
 }
 
 static int lj_cf_package_searchpath(lua_State *L)
@@ -534,6 +548,7 @@ static void setpath(lua_State *L, const char *fieldname, const char *envname,
 static const luaL_Reg package_lib[] = {
   { "loadlib",	lj_cf_package_loadlib },
   { "searchpath",  lj_cf_package_searchpath },
+  { "readable",  lj_cf_package_readable },
   { "seeall",	lj_cf_package_seeall },
   { NULL, NULL }
 };
