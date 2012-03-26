@@ -78,5 +78,6 @@ LJ_FUNC LexToken lj_lex_lookahead(LexState *ls);
 LJ_FUNC const char *lj_lex_token2str(LexState *ls, LexToken token);
 LJ_FUNC_NORET void lj_lex_error(LexState *ls, LexToken token, ErrMsg em, ...);
 LJ_FUNC void lj_lex_init(lua_State *L);
+LJ_FUNC BCLine line_vmevent(LexState *ls, BCLine input);
 
 #endif

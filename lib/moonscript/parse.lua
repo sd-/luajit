@@ -1,6 +1,7 @@
 module("moonscript.parse", package.seeall)
 
 local util = require"moonscript.util"
+local rep = string.rep
 
 require"lpeg"
 
@@ -222,7 +223,6 @@ local function self_assign(name)
 	return {name, name}
 end
 
-local err_msg = "Failed to parse:\n [%d] >>    %s (%d)"
 
 local build_grammar = wrap_env(function()
 	local _indent = Stack(0) -- current indent
@@ -500,10 +500,11 @@ local build_grammar = wrap_env(function()
 			end))
 
 			if not tree then
-				local line_no = pos_to_line(last_pos)
+				local line_no, column = pos_to_line(last_pos)
 				local line_str = get_line(line_no) or ""
-				
-				return nil, err_msg:format(line_no, trim(line_str), _indent:top())
+        local prefix=(" [%d] >>    "):format(line_no)
+        local msg=("%d\n%s%s\n%s^ failed to parse!"):format(line_no, prefix, line_str, rep(" ", #prefix + column - 1))
+        return nil, msg
 			end
 			return tree
 		end

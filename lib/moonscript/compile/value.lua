@@ -1,3 +1,4 @@
+-- DO NOT EDIT, Generated from moonscript/compile/value.moon on Mon Mar 26 02:59:21 2012
 module("moonscript.compile", package.seeall)
 local util = require("moonscript.util")
 local data = require("moonscript.data")

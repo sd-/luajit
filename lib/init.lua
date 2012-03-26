@@ -1,6 +1,13 @@
 -- Bootstrap.
+local tinsert = table.insert
 local stringmeta=getmetatable("")
-stringmeta.__mod = stringmeta.format
+local getinfo = debug.getinfo
+stringmeta.__mod = function(a,b)
+  if type(b)~="table" then
+    b={b}
+  end
+  return string.format(a, unpack(b))
+end
 
 -- hackish bootstrap :)
 local oldreadable = package.readable
@@ -12,12 +19,13 @@ package.readable = function(a,b)
 end
 
 local moonscript = require "moonscript"
+local pos_to_line = moonscript.util.pos_to_line
 
 package.readable = oldreadable
 
 local old_loadfile = loadfile
 local old_loadstring = loadstring
-local line_tables = {}
+local line_tables = moonscript.line_tables
 function loadstring(str, fn, dump)
 	if fn:sub(-5) == '.moon' then
 		local passed, code, ltable = pcall(function()
@@ -33,7 +41,28 @@ function loadstring(str, fn, dump)
 			f:write(code)
 			f:close()
 		end
-		return old_loadstring(code, '@'..fn)
+
+    local lcache = {}
+    local function reverse_lineno(chunk, lineno)
+      local lt=lcache[lineno]
+      if lt then return lt end
+      for i=lineno,0,-1 do
+        lt=ltable[i]
+        if lt then
+          local col,row=pos_to_line(code, lt)
+          if not col then
+            print("cannot find",lineno)
+          else
+            lcache[lineno]=col
+            return col
+          end
+        end
+      end
+    end
+    jit.attach(reverse_lineno, "LINE")
+		local res, err = old_loadstring(code, '@'..fn)
+    jit.attach(reverse_lineno)
+    return res, err
 	end
 	return old_loadstring(str, '@'..fn)
 end
@@ -44,3 +73,5 @@ function loadfile(fn)
 	end
 	return old_loadfile(fn)
 end
+
+

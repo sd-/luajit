@@ -1,3 +1,4 @@
+-- DO NOT EDIT, Generated from moonscript/compile.moon on Mon Mar 26 02:59:21 2012
 module("moonscript.compile", package.seeall)
 local util = require("moonscript.util")
 local dump = require("moonscript.dump")
@@ -222,6 +223,7 @@ Block = (function()
     mark_pos = function(self, node)
       if node[-1] then
         self.last_pos = node[-1]
+        self.root.last_pos = self.last_pos
         if not self._posmap[self.current_line] then
           self._posmap[self.current_line] = self.last_pos
         end
@@ -497,13 +499,15 @@ RootBlock = (function()
   return _class_0
 end)()
 format_error = function(msg, pos, file_str)
-  local line = pos_to_line(file_str, pos)
+  local line, column = pos_to_line(file_str, pos)
   local line_str
   line_str, line = get_closest_line(file_str, line)
   line_str = line_str or ""
+  local prefix = (" [%d] >>    "):format(line)
   return concat({
-    "Compile error: " .. msg,
-    (" [%d] >>    %s"):format(line, trim(line_str))
+    ("Compile error at line %d"):format(line),
+    ("%s%s"):format(prefix, line_str),
+    ("%s ^ %s"):format(string.rep(" ", #prefix + column - 1), msg)
   }, "\n")
 end
 value = function(value)

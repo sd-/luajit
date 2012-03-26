@@ -24,6 +24,7 @@
 /* VM event IDs. */
 typedef enum {
   VMEVENT_DEF(BC,	0x00003883),
+  VMEVENT_DEF(LINE,	0x0530778a),
   VMEVENT_DEF(TRACE,	0xb2d91467),
   VMEVENT_DEF(RECORD,	0x9284bf4f),
   VMEVENT_DEF(TEXIT,	0xb29df2b0),
@@ -32,28 +33,28 @@ typedef enum {
 
 #ifdef LUAJIT_DISABLE_VMEVENT
 #define lj_vmevent_send(L, ev, args)		UNUSED(L)
-#define lj_vmevent_send_(L, ev, args, post)	UNUSED(L)
+#define lj_vmevent_send_(L, ev, args, post, count)	UNUSED(L)
 #else
 #define lj_vmevent_send(L, ev, args) \
   if (G(L)->vmevmask & VMEVENT_MASK(LJ_VMEVENT_##ev)) { \
     ptrdiff_t argbase = lj_vmevent_prepare(L, LJ_VMEVENT_##ev); \
     if (argbase) { \
       args \
-      lj_vmevent_call(L, argbase); \
+      lj_vmevent_call(L, argbase, 0); \
     } \
   }
-#define lj_vmevent_send_(L, ev, args, post) \
+#define lj_vmevent_send_(L, ev, args, post, count) \
   if (G(L)->vmevmask & VMEVENT_MASK(LJ_VMEVENT_##ev)) { \
     ptrdiff_t argbase = lj_vmevent_prepare(L, LJ_VMEVENT_##ev); \
     if (argbase) { \
       args \
-      lj_vmevent_call(L, argbase); \
+      lj_vmevent_call(L, argbase, count); \
       post \
     } \
   }
 
 LJ_FUNC ptrdiff_t lj_vmevent_prepare(lua_State *L, VMEvent ev);
-LJ_FUNC void lj_vmevent_call(lua_State *L, ptrdiff_t argbase);
+LJ_FUNC void lj_vmevent_call(lua_State *L, ptrdiff_t argbase, int count);
 #endif
 
 #endif

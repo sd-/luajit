@@ -1,3 +1,4 @@
+-- DO NOT EDIT, Generated from moonscript/util.moon on Mon Mar 26 02:59:21 2012
 module("moonscript.util", package.seeall)
 local concat = table.concat
 moon = {
@@ -17,10 +18,14 @@ moon = {
 }
 pos_to_line = function(str, pos)
   local line = 1
-  for _ in str:sub(1, pos):gmatch("\n") do
-    line = line + 1
+  local last_pos = 1
+  for i = 1, pos do
+    if str:sub(i, i) == "\n" then
+      line = line + 1
+      last_pos = i
+    end
   end
-  return line
+  return line, pos - last_pos
 end
 get_closest_line = function(str, line_num)
   local line = get_line(str, line_num)

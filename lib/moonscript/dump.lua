@@ -1,3 +1,4 @@
+-- DO NOT EDIT, Generated from moonscript/dump.moon on Mon Mar 26 02:59:21 2012
 module("moonscript.dump", package.seeall)
 local flat_value
 flat_value = function(op, depth)
