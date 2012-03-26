@@ -1136,6 +1136,10 @@ TRef lj_record_idx(jit_State *J, RecordIndex *ix)
   IROp xrefop, loadop;
   cTValue *oldv;
 
+  /* remember original table before overwriting it */
+  ix->otab = ix->tab;
+  ix->otabv = ix->tabv;
+
   while (!tref_istab(ix->tab)) { /* Handle non-table lookup. */
     /* Never call raw lj_record_idx() on non-table. */
     lua_assert(ix->idxchain != 0);
@@ -1156,7 +1160,9 @@ TRef lj_record_idx(jit_State *J, RecordIndex *ix)
 	lj_record_call(J, func, 3);  /* mobj(tab, key, val) */
 	return 0;
       } else {
-	lj_record_call(J, func, 2);  /* res = mobj(tab, key) */
+	base[3] = ix->otab;
+	copyTV(J->L, tv+3, &ix->otabv);
+	lj_record_call(J, func, 3);  /* res = mobj(tab, key, origtab) */
 	return 0;  /* No result yet. */
       }
     }
