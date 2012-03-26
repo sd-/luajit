@@ -714,7 +714,7 @@ static void build_subroutines(BuildCtx *ctx)
   |  stw PC, -16(BASE)			// [cont|PC]
   |   add PC, TMP1, BASE
   |  lwz LFUNC:RB, FRAME_FUNC(BASE)	// Guaranteed to be a function here.
-  |   li NARGS8:RC, 16			// 2 args for func(t, k).
+  |   li NARGS8:RC, 24			// 3 args for func(t, k, origt)
   |  b ->vm_call_dispatch_f
   |
   |//-----------------------------------------------------------------------
