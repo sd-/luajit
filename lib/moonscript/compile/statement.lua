@@ -1,4 +1,4 @@
--- DO NOT EDIT, Generated from moonscript/compile/statement.moon on Mon Mar 26 03:09:21 2012
+-- GENERATED, DO NOT EDIT
 module("moonscript.compile", package.seeall)
 local util = require("moonscript.util")
 require("moonscript.compile.format")

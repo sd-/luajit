@@ -1,4 +1,4 @@
--- DO NOT EDIT, Generated from moonscript/compile.moon on Mon Mar 26 03:09:21 2012
+-- GENERATED, DO NOT EDIT
 module("moonscript.compile", package.seeall)
 local util = require("moonscript.util")
 local dump = require("moonscript.dump")
@@ -223,7 +223,6 @@ Block = (function()
     mark_pos = function(self, node)
       if node[-1] then
         self.last_pos = node[-1]
-        self.root.last_pos = self.last_pos
         if not self._posmap[self.current_line] then
           self._posmap[self.current_line] = self.last_pos
         end
@@ -266,7 +265,7 @@ Block = (function()
         self:add(self:line(line))
       elseif t == Line then
         self:add_line_tables(line)
-        self:add_line_text(line:render())
+        self:add_line_text((line:render()))
         self.current_line = self.current_line + 1
       else
         error("Adding unknown item")
@@ -475,7 +474,9 @@ RootBlock = (function()
         value = transform.Value:instance(self),
         statement = transform.Statement:instance(self)
       }
-      return _parent_0.__init(self, ...)
+      _parent_0.__init(self, ...)
+      self.current_line = self.current_line + 1
+      return self:add_line_text("-- GENERATED, DO NOT EDIT")
     end,
     __base = _base_0,
     __name = "RootBlock",

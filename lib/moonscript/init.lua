@@ -1,4 +1,4 @@
--- DO NOT EDIT, Generated from moonscript/init.moon on Mon Mar 26 03:09:21 2012
+-- GENERATED, DO NOT EDIT
 module("moonscript", package.seeall)
 require("moonscript.compile")
 require("moonscript.parse")

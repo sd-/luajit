@@ -1,4 +1,4 @@
--- DO NOT EDIT, Generated from moonscript/util.moon on Mon Mar 26 03:09:21 2012
+-- GENERATED, DO NOT EDIT
 module("moonscript.util", package.seeall)
 local concat = table.concat
 moon = {
@@ -19,7 +19,7 @@ moon = {
 pos_to_line = function(str, pos)
   local line = 1
   local last_pos = 1
-  for i = 1, pos do
+  for i = 1, pos - 1 do
     if str:sub(i, i) == "\n" then
       line = line + 1
       last_pos = i

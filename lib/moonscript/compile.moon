@@ -140,8 +140,8 @@ class Block
   mark_pos: (node) =>
     if node[-1]
       @last_pos = node[-1]
-      self.root.last_pos = @last_pos
-      if not @_posmap[@current_line]
+--      self.root.last_pos = @last_pos
+      if not @_posmap[@current_line]-- or @_posmap[@current_line] < @last_pos
         @_posmap[@current_line] = @last_pos
 
   -- add raw text as new line
@@ -153,7 +153,7 @@ class Block
 
     for line, source in pairs sub_table
       line += offset
-      if not @_posmap[line]
+      if not @_posmap[line]-- or @_posmap[line] < source
         @_posmap[line] = source
 
   add_line_tables: (line) =>
@@ -178,7 +178,7 @@ class Block
       @add @line line
     elseif t == Line
       @add_line_tables line
-      @add_line_text line\render!
+      @add_line_text (line\render!)
       @current_line += 1
     else
       error "Adding unknown item"
@@ -279,6 +279,8 @@ class RootBlock extends Block
       statement: transform.Statement\instance self
     }
     super ...
+    @current_line += 1
+    @add_line_text("-- GENERATED, DO NOT EDIT")
 
   __tostring: => "RootBlock<>"
 

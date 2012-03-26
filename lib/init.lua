@@ -1,7 +1,8 @@
 -- Bootstrap.
 local tinsert = table.insert
-local stringmeta=getmetatable("")
+local stringmeta = getmetatable("")
 local getinfo = debug.getinfo
+local date = os.date
 stringmeta.__mod = function(a,b)
   if type(b)~="table" then
     b={b}
@@ -12,13 +13,16 @@ end
 -- hackish bootstrap :)
 local oldreadable = package.readable
 package.readable = function(a,b)
-	if a:sub(1,11) ~= "moonscript." and a:sub(-5)==".moon" then
+	if (a:sub(1,11) ~= "moonscript.") and (a:sub(1,5)~="moon.") and a:sub(-5)==".moon" then
 		return
 	end
 	return oldreadable(a,b)
 end
 
 local moonscript = require "moonscript"
+require "moonscript.util"
+local compile = require "moonscript.compile"
+local parse = require "moonscript.parse"
 local pos_to_line = moonscript.util.pos_to_line
 
 package.readable = oldreadable
@@ -29,7 +33,16 @@ local line_tables = moonscript.line_tables
 function loadstring(str, fn, dump)
 	if fn:sub(-5) == '.moon' then
 		local passed, code, ltable = pcall(function()
-			return moonscript.to_lua(str)
+      local tree, err = parse.string(str)
+      if not tree then
+        error(err, 2)
+      end
+      local code, ltable, pos = compile.tree(tree)
+      if not code then
+        error(compile.format_error(ltable, pos, str), 2)
+      end
+      return code, ltable
+--			return moonscript.to_lua(str)
 		end)
 		if not passed then
 			return nil, fn .. ": "..code
@@ -37,7 +50,6 @@ function loadstring(str, fn, dump)
 		line_tables[fn] = ltable
 		if dump then
 			local f=io.open(dump,"w+")
-			f:write("-- DO NOT EDIT, Generated from "..fn.."\n")
 			f:write(code)
 			f:close()
 		end
@@ -49,15 +61,17 @@ function loadstring(str, fn, dump)
       for i=lineno,0,-1 do
         lt=ltable[i]
         if lt then
-          local col,row=pos_to_line(code, lt)
-          if not col then
-            print("cannot find",lineno)
+          local row,col = pos_to_line(str, lt)
+          --print(lineno,lt,row,col)
+          if not row then
           else
-            lcache[lineno]=col
-            return col
+            lcache[lineno]=row
+            return row
           end
         end
       end
+--      print("default lineno!",lineno)
+      return lineno
     end
     jit.attach(reverse_lineno, "LINE")
 		local res, err = old_loadstring(code, '@'..fn)
@@ -75,4 +89,18 @@ function loadfile(fn)
 end
 
 require "strict"
+
+--[[
+package.zip = {}
+
+local ZIP = require "zip"
+local arch = io.open(os.progname, "r")
+if not arch then
+  arch = io.open("/proc/self/exe", "r")
+end
+
+--if arch then
+--  package.zip.__init = ZIP(arch)
+end]]
+
 

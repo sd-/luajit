@@ -1,4 +1,4 @@
--- DO NOT EDIT, Generated from moonscript/errors.moon on Mon Mar 26 03:09:21 2012
+-- GENERATED, DO NOT EDIT
 module("moonscript.errors", package.seeall)
 local moon = require("moonscript")
 local util = require("moonscript.util")

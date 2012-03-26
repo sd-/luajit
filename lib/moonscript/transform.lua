@@ -1,4 +1,4 @@
--- DO NOT EDIT, Generated from moonscript/transform.moon on Mon Mar 26 03:09:21 2012
+-- GENERATED, DO NOT EDIT
 module("moonscript.transform", package.seeall)
 local types = require("moonscript.types")
 local util = require("moonscript.util")

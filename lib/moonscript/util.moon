@@ -21,7 +21,7 @@ moon =
 pos_to_line = (str, pos) ->
   line = 1
   last_pos = 1
-  for i=1, pos
+  for i=1, pos - 1
     if str\sub(i, i) == "\n"
       line += 1
       last_pos = i

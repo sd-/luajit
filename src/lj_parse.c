@@ -1190,18 +1190,34 @@ static void fs_fixup_uv(FuncState *fs, GCproto *pt, uint16_t *uv)
 
 #ifndef LUAJIT_DISABLE_DEBUGINFO
 /* Prepare lineinfo for prototype. */
-static size_t fs_prep_line(FuncState *fs, BCLine numline)
+static size_t fs_prep_line(LexState *ls, BCLine *numlinep, BCLine *linebuf)
 {
+  FuncState *fs = ls->fs;
+  BCInsLine *base = fs->bcbase + 1;
+  int i, numline, linemin, linemax; /* will be linedefined + numline */
+
+  /* translate line info */  
+  linemin = linemax = line_vmevent(ls, fs->linedefined);
+
+  /* extract line numbers */
+  for (i = 0; i < fs->pc-1; i++) {
+    int lno = line_vmevent(ls, base[i].line);
+    if (lno < linemin) linemin = lno;
+    if (lno > linemax) linemax = lno;
+    linebuf[i] = lno;
+  }
+  numline = 1+linemax-linemin;
+  *numlinep = numline;
+  fs->linedefined = linemin;
+//  printf("numline=%d linemin=%d linemax=%d\n",numline,linemin,linemax);
   return (fs->pc-1) << (numline < 256 ? 0 : numline < 65536 ? 1 : 2);
 }
 
 
 /* Fixup lineinfo for prototype. */
-static void fs_fixup_line(LexState *ls, GCproto *pt,
-			  void *lineinfo, BCLine numline)
+static void fs_fixup_line(FuncState *fs, GCproto *pt,
+			  void *lineinfo, BCLine *linebuf, BCLine numline)
 {
-  FuncState *fs = ls->fs;
-  BCInsLine *base = fs->bcbase + 1;
   BCLine first = fs->linedefined;
   MSize i, n = fs->pc-1;
   pt->firstline = first;
@@ -1209,28 +1225,24 @@ static void fs_fixup_line(LexState *ls, GCproto *pt,
   setmref(pt->lineinfo, lineinfo);
 
   /* translate bytecode line numbers */
-  for (i = 0; i < n; i++)
-    base[i].line = line_vmevent(ls, base[i].line);
-  i = 0;
-
   if (LJ_LIKELY(numline < 256)) {
     uint8_t *li = (uint8_t *)lineinfo;
     do {
-      BCLine delta = base[i].line - first;
+      int delta = linebuf[i] - first;
       lua_assert(delta >= 0 && delta < 256);
       li[i] = (uint8_t)delta;
     } while (++i < n);
   } else if (LJ_LIKELY(numline < 65536)) {
     uint16_t *li = (uint16_t *)lineinfo;
     do {
-      BCLine delta = base[i].line - first;
+      int delta = linebuf[i] - first;
       lua_assert(delta >= 0 && delta < 65536);
       li[i] = (uint16_t)delta;
     } while (++i < n);
   } else {
     uint32_t *li = (uint32_t *)lineinfo;
     do {
-      BCLine delta = base[i].line - first;
+      int delta = linebuf[i] - first;
       lua_assert(delta >= 0);
       li[i] = (uint32_t)delta;
     } while (++i < n);
@@ -1378,13 +1390,10 @@ static GCproto *fs_finish(LexState *ls, BCLine line)
 {
   lua_State *L = ls->L;
   FuncState *fs = ls->fs;
+  BCLine linebuf[fs->pc-1];
   size_t sizept, ofsk, ofsuv, ofsli, ofsdbg, ofsvar;
   GCproto *pt;
   BCLine numline;
-
-  /* translate line info */  
-  fs->linedefined = line_vmevent(ls, fs->linedefined);
-  numline = line_vmevent(ls, line) - fs->linedefined;
 
   /* Apply final fixups. */
   lua_assert(fs->bl == NULL);
@@ -1396,7 +1405,7 @@ static GCproto *fs_finish(LexState *ls, BCLine line)
   sizept = (sizept + sizeof(TValue)-1) & ~(sizeof(TValue)-1);
   ofsk = sizept; sizept += fs->nkn*sizeof(TValue);
   ofsuv = sizept; sizept += ((fs->nuv+1)&~1)*2;
-  ofsli = sizept; sizept += fs_prep_line(fs, numline);
+  ofsli = sizept; sizept += fs_prep_line(ls, &numline, linebuf);
   ofsdbg = sizept; sizept += fs_prep_var(ls, fs, &ofsvar);
 
   /* Allocate prototype and initialize its fields. */
@@ -1414,7 +1423,7 @@ static GCproto *fs_finish(LexState *ls, BCLine line)
   fs_fixup_bc(fs, pt, (BCIns *)((char *)pt + sizeof(GCproto)), fs->pc);
   fs_fixup_k(fs, pt, (void *)((char *)pt + ofsk));
   fs_fixup_uv(fs, pt, (uint16_t *)((char *)pt + ofsuv));
-  fs_fixup_line(ls, pt, (void *)((char *)pt + ofsli), numline);
+  fs_fixup_line(fs, pt, (void *)((char *)pt + ofsli), linebuf, numline);
   fs_fixup_var(ls, pt, (uint8_t *)((char *)pt + ofsdbg), ofsvar);
 
   lj_vmevent_send(L, BC,
