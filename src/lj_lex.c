@@ -23,6 +23,7 @@
 #include "lj_lex.h"
 #include "lj_parse.h"
 #include "lj_char.h"
+#include "lj_vmevent.h"
 
 /* Lua lexer token names. */
 static const char *const tokennames[] = {
@@ -479,6 +480,23 @@ const char *lj_lex_token2str(LexState *ls, LexToken token)
     return lj_str_pushf(ls->L, "char(%d)", token);
 }
 
+/* translate line number via LINE vmevent
+ * expects chunk name at the top of stack
+ */
+BCLine line_vmevent(LexState *ls, BCLine input)
+{
+  lua_State *L = ls->L;
+  TValue *oldtop = L->top;
+  lj_vmevent_send_(L, LINE,
+    lua_pushstring(L, strdata(ls->chunkname));
+    lua_pushinteger(L, input);
+  ,
+    input = lua_tointeger(L, -1);
+  ,1);
+  L->top = oldtop;
+  return input;
+}
+
 void lj_lex_error(LexState *ls, LexToken token, ErrMsg em, ...)
 {
   const char *tok;
@@ -492,7 +510,7 @@ void lj_lex_error(LexState *ls, LexToken token, ErrMsg em, ...)
     tok = lj_lex_token2str(ls, token);
   }
   va_start(argp, em);
-  lj_err_lex(ls->L, ls->chunkname, tok, ls->linenumber, em, argp);
+  lj_err_lex(ls->L, ls->chunkname, tok, line_vmevent(ls, ls->linenumber), em, argp);
   va_end(argp);
 }
 

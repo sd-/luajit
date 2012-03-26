@@ -585,7 +585,7 @@ static TValue *trace_state(lua_State *L, lua_CFunction dummy, void *ud)
       ,
 	J2G(J)->tmptv = savetv;
 	J2G(J)->tmptv2 = savetv2;
-      );
+      ,0);
       lj_record_ins(J);
       break;
 

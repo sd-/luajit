@@ -34,7 +34,7 @@ ptrdiff_t lj_vmevent_prepare(lua_State *L, VMEvent ev)
   return 0;
 }
 
-void lj_vmevent_call(lua_State *L, ptrdiff_t argbase)
+void lj_vmevent_call(lua_State *L, ptrdiff_t argbase, int keeponstack)
 {
   global_State *g = G(L);
   uint8_t oldmask = g->vmevmask;
@@ -42,7 +42,7 @@ void lj_vmevent_call(lua_State *L, ptrdiff_t argbase)
   int status;
   g->vmevmask = 0;  /* Disable all events. */
   hook_vmevent(g);
-  status = lj_vm_pcall(L, restorestack(L, argbase), 0+1, 0);
+  status = lj_vm_pcall(L, restorestack(L, argbase), 0+1+keeponstack, 0);
   if (LJ_UNLIKELY(status)) {
     /* Really shouldn't use stderr here, but where else to complain? */
     L->top--;

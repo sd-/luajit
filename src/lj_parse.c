@@ -1195,16 +1195,24 @@ static size_t fs_prep_line(FuncState *fs, BCLine numline)
   return (fs->pc-1) << (numline < 256 ? 0 : numline < 65536 ? 1 : 2);
 }
 
+
 /* Fixup lineinfo for prototype. */
-static void fs_fixup_line(FuncState *fs, GCproto *pt,
+static void fs_fixup_line(LexState *ls, GCproto *pt,
 			  void *lineinfo, BCLine numline)
 {
+  FuncState *fs = ls->fs;
   BCInsLine *base = fs->bcbase + 1;
   BCLine first = fs->linedefined;
-  MSize i = 0, n = fs->pc-1;
-  pt->firstline = fs->linedefined;
+  MSize i, n = fs->pc-1;
+  pt->firstline = first;
   pt->numline = numline;
   setmref(pt->lineinfo, lineinfo);
+
+  /* translate bytecode line numbers */
+  for (i = 0; i < n; i++)
+    base[i].line = line_vmevent(ls, base[i].line);
+  i = 0;
+
   if (LJ_LIKELY(numline < 256)) {
     uint8_t *li = (uint8_t *)lineinfo;
     do {
@@ -1370,9 +1378,13 @@ static GCproto *fs_finish(LexState *ls, BCLine line)
 {
   lua_State *L = ls->L;
   FuncState *fs = ls->fs;
-  BCLine numline = line - fs->linedefined;
   size_t sizept, ofsk, ofsuv, ofsli, ofsdbg, ofsvar;
   GCproto *pt;
+  BCLine numline;
+
+  /* translate line info */  
+  fs->linedefined = line_vmevent(ls, fs->linedefined);
+  numline = line_vmevent(ls, line) - fs->linedefined;
 
   /* Apply final fixups. */
   lua_assert(fs->bl == NULL);
@@ -1402,7 +1414,7 @@ static GCproto *fs_finish(LexState *ls, BCLine line)
   fs_fixup_bc(fs, pt, (BCIns *)((char *)pt + sizeof(GCproto)), fs->pc);
   fs_fixup_k(fs, pt, (void *)((char *)pt + ofsk));
   fs_fixup_uv(fs, pt, (uint16_t *)((char *)pt + ofsuv));
-  fs_fixup_line(fs, pt, (void *)((char *)pt + ofsli), numline);
+  fs_fixup_line(ls, pt, (void *)((char *)pt + ofsli), numline);
   fs_fixup_var(ls, pt, (uint8_t *)((char *)pt + ofsdbg), ofsvar);
 
   lj_vmevent_send(L, BC,
