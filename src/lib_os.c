@@ -248,9 +248,13 @@ LJLIB_CF(os_setlocale)
 
 #include "lj_libdef.h"
 
+extern char *progname;
+
 LUALIB_API int luaopen_os(lua_State *L)
 {
   LJ_LIB_REG(L, LUA_OSLIBNAME, os);
+  lua_pushstring(L, progname);
+  lua_setfield(L, -2, "progname");
   return 1;
 }
 
