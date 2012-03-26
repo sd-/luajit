@@ -1,3 +1,4 @@
+-- DO NOT EDIT, Generated from ./moon/init.moon
 if not moon or not moon.inject then
   module("moon", package.seeall)
 end

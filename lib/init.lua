@@ -74,4 +74,5 @@ function loadfile(fn)
 	return old_loadfile(fn)
 end
 
+require "strict"
 

@@ -7,12 +7,14 @@
 --
 
 local getinfo, error, rawset, rawget = debug.getinfo, error, rawset, rawget
+local _G = _G
 
 local mt = getmetatable(_G)
 if mt == nil then
   mt = {}
   setmetatable(_G, mt)
 end
+_G.strict = true
 
 mt.__declared = {}
 
@@ -22,7 +24,7 @@ local function what ()
 end
 
 mt.__newindex = function (t, n, v)
-  if not mt.__declared[n] then
+  if _G.strict and not mt.__declared[n] then
     local w = what()
     if w ~= "main" and w ~= "C" then
       error("assign to undeclared variable '"..n.."'", 2)
@@ -33,7 +35,7 @@ mt.__newindex = function (t, n, v)
 end
 
 mt.__index = function (t, n)
-  if not mt.__declared[n] and what() ~= "C" then
+  if _G.strict and not mt.__declared[n] and what() ~= "C" then
     error("variable '"..n.."' is not declared", 2)
   end
   return rawget(t, n)

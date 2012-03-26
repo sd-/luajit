@@ -515,7 +515,10 @@ end)
 -- parse a string
 -- returns tree, or nil and error message
 function string(str)
+  local strict = _G.strict
+  _G.strict = false
 	local g = build_grammar()
+  _G.strict = strict
 	return g:match(str)
 end
 
