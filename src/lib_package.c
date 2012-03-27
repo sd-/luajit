@@ -283,6 +283,7 @@ static int readable(lua_State *L, const char *filename)
   return ret;
 }
 
+/* this will always push one value on stack */
 static const char *searchpath (lua_State *L, const char *name,
 			       const char *path)
 {
@@ -331,7 +332,18 @@ static const char *findfile(lua_State *L, const char *name,
   path = lua_tostring(L, -1);
   if (path == NULL)
     luaL_error(L, LUA_QL("package.%s") " must be a string", pname);
-  return searchpath(L, name, path);
+  lua_getglobal(L, "package");
+  lua_getfield(L, -1, "searchpath");
+  lua_pushstring(L, name); /* name */
+  lua_pushvalue(L, -4); /* path */
+  lua_call(L, 2, 2);
+  if (lua_isnil(L, -2)) {
+    luaL_error(L, lua_tostring(L, -1));
+    return NULL; /* unreachable */
+  }
+  path = lua_tostring(L, -2);
+  lua_pop(L, 3); /* package table, ret + err */
+  return path;
 }
 
 static void loaderror(lua_State *L, const char *filename)
