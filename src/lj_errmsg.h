@@ -134,6 +134,7 @@ ERRDEF(XSYMBOL,	"unexpected symbol")
 ERRDEF(XDOTS,	"cannot use " LUA_QL("...") " outside a vararg function")
 ERRDEF(XSYNTAX,	"syntax error")
 ERRDEF(XBREAK,	"no loop to break")
+ERRDEF(XCONTINUE, "no loop to continue")
 ERRDEF(XFOR,	LUA_QL("=") " or " LUA_QL("in") " expected")
 
 /* Bytecode reader errors. */

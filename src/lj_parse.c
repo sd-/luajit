@@ -96,6 +96,7 @@ static int expr_numiszero(ExpDesc *e)
 typedef struct FuncScope {
   struct FuncScope *prev;	/* Link to outer scope. */
   BCPos breaklist;		/* Jump list for loop breaks. */
+  BCPos contlist;		/* Jump list for loop continues */
   uint8_t nactvar;		/* Number of active vars outside the scope. */
   uint8_t upval;		/* Some variable in the scope is an upvalue. */
   uint8_t isbreakable;		/* Scope is a loop and allows a break. */
@@ -1946,6 +1947,7 @@ static BCPos expr_cond(LexState *ls)
 static void scope_begin(FuncState *fs, FuncScope *bl, int isbreakable)
 {
   bl->breaklist = NO_JMP;
+  bl->contlist = NO_JMP;
   bl->isbreakable = (uint8_t)isbreakable;
   bl->nactvar = (uint8_t)fs->nactvar;
   bl->upval = 0;
@@ -1996,6 +1998,24 @@ static void parse_break(LexState *ls)
   if (upval)
     bcemit_AJ(fs, BC_UCLO, bl->nactvar, 0);  /* Close upvalues. */
   jmp_append(fs, &bl->breaklist, bcemit_jmp(fs));
+  fs->freereg = savefr;
+}
+
+/* Parse 'continue' statement. */
+static void parse_continue(LexState *ls) {
+  FuncState *fs = ls->fs;
+  FuncScope *bl;
+  BCReg savefr;
+  int upval = 0;
+  for (bl = fs->bl; bl && !bl->isbreakable; bl = bl->prev)
+    upval |= bl->upval;  /* Collect upvalues in intervening scopes. */
+  if (!bl)  /* Error if no continueable scope found. */
+    err_syntax(ls, LJ_ERR_XCONTINUE);
+  savefr = fs->freereg;
+  fs->freereg = bl->nactvar;  /* Shrink slots to help data-flow analysis. */
+  if (upval)
+    bcemit_AJ(fs, BC_UCLO, bl->nactvar, 0);  /* Close upvalues. */
+  jmp_append(fs, &bl->contlist, bcemit_jmp(fs));
   fs->freereg = savefr;
 }
 
@@ -2236,6 +2256,7 @@ static void parse_while(LexState *ls, BCLine line)
   jmp_patch(fs, bcemit_jmp(fs), start);
   lex_match(ls, TK_end, TK_while, line);
   scope_end(fs);
+  jmp_patch(fs, bl.contlist, start); /* patch 'continue' jumps */
   jmp_tohere(fs, condexit);
   jmp_patchins(fs, loop, fs->pc);
 }
@@ -2253,6 +2274,7 @@ static void parse_repeat(LexState *ls, BCLine line)
   bcemit_AD(fs, BC_LOOP, fs->nactvar, 0);
   parse_chunk(ls);
   lex_match(ls, TK_until, TK_repeat, line);
+  jmp_tohere(fs, bl1.contlist); /* patch 'continue' jumps */
   condexit = expr_cond(ls);  /* Parse condition (still inside inner scope). */
   if (!bl2.upval) {  /* No upvalues? Just end inner scope. */
     scope_end(fs);
@@ -2298,6 +2320,7 @@ static void parse_for_num(LexState *ls, GCstr *varname, BCLine line)
   bcreg_reserve(fs, 1);
   parse_block(ls);
   scope_end(fs);
+  jmp_tohere(fs, bl.prev->contlist); /* patch 'continue' jumps */
   /* Perform loop inversion. Loop control instructions are at the end. */
   loopend = bcemit_AJ(fs, BC_FORL, base, NO_JMP);
   fs->bcbase[loopend].line = line;  /* Fix line for control ins. */
@@ -2369,6 +2392,7 @@ static void parse_for_iter(LexState *ls, GCstr *indexname)
   bcreg_reserve(fs, nvars-3);
   parse_block(ls);
   scope_end(fs);
+  jmp_tohere(fs, bl.prev->contlist); /* patch 'continue' jumps */
   /* Perform loop inversion. Loop control instructions are at the end. */
   jmp_patchins(fs, loop, fs->pc);
   bcemit_ABC(fs, isnext ? BC_ITERN : BC_ITERC, base, nvars-3+1, 2+1);
@@ -2469,6 +2493,10 @@ static int parse_stmt(LexState *ls)
   case TK_break:
     lj_lex_next(ls);
     parse_break(ls);
+    return 1;  /* Must be last. */
+  case TK_continue:
+    lj_lex_next(ls);
+    parse_continue(ls);
     return 1;  /* Must be last. */
 #ifdef LUAJIT_ENABLE_LUA52COMPAT
   case ';':
